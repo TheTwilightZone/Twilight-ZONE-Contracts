@@ -18,6 +18,12 @@
 
 ![myImage](https://github.com/OlympusDAO/olympus-contracts/blob/main/docs/box-diagram.png)
 
+|  Contract  |                   Address                  |        Notes        |
+|:----------:|:------------------------------------------:|:-------------------:|
+| ZONE token | 0x32930590244e31a9e4bbda8ab743539af62f3c5a | Main token contract |
+|            |                                            |                     |
+|            |                                            |                     |
+
 ## Allocator Guide
 The following is a guide for interacting with the treasury as a reserve allocator.
 
