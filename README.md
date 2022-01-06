@@ -21,7 +21,7 @@
 |  Contract  |                   Address                  |        Notes        |
 |:----------:|:------------------------------------------:|:-------------------:|
 | ZONE token | 0x32930590244e31a9e4bbda8ab743539af62f3c5a | Main token contract |
-|            |                                            |                     |
+| sZONE token| 0x0b6eafc6cc85f0eccde14e8ffca3c24fd91d92e4 | Staked ZONE token contract|
 |            |                                            |                     |
 
 ## Allocator Guide
