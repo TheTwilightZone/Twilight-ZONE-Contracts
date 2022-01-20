@@ -2,6 +2,8 @@ pragma solidity ^ 0.8.0;
 import "https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/FullMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
 
+
+//ERC20 Interface
 interface IERC20 {
     function totalSupply() external view returns(uint256);
     function balanceOf(address account) external view returns(uint256);
@@ -12,17 +14,20 @@ interface IERC20 {
     function decimals() external view returns (uint8);
 }
 
+//Liquidity Token Interface
 interface IUniswapV2Pair {
     function getReserves() external view returns(uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
     function token0() external view returns(address);
     function token1() external view returns(address);
 }
 
-interface IOHMERC20 {
+//Protocol Token Interface
+interface IProtocolERC20 {
     function burnFrom(address account_, uint256 amount_) external;
     function mint(address account_, uint256 amount_) external;
 }
 
+//Calculator Interface
 interface IProtocolCalculatorOracle {
     function bondValueInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns ( uint );
     function bondProfitInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns (uint);
@@ -32,23 +37,30 @@ interface IProtocolCalculatorOracle {
 
 contract ProtocolDistributor{
 
+    //Using that Safe Math
     using SafeMath for uint;
 
+    //Standard Declarations
     address public manager;
-    address public protocolCalculatorOracle;
-    address public assetDepository;
+    address public protocolCalculatorOracle; //Calculator Contract
+    address public assetDepository; //OnRamp Contract
 
+    //Epoch Stuff
     uint public epochLength;
     uint public nextEpochBlock;
     
+    //Staking Reward Info
     StakingReward public stakingReward;
     
+    //Bond Stuff
     mapping(string => uint) private bondArchive;
     mapping(address => uint) public whichBond;
-
-    mapping(address => AccountProfile) private userProfile;
-    
     Bond[] private bondList;
+
+    //User Storage
+    mapping(address => AccountProfile) private userProfile;
+
+//----STRUCTS----//
 
     //Individual Bonds
     struct Bond{
@@ -58,7 +70,6 @@ contract ProtocolDistributor{
         bool isLiquidityToken;
         bool isProtocolLiquidity;
         address mainLiquidityPair; //Paired with Protocol Token, or Price Token [Duplicate if LP Token]
-
         uint multiplier; //Out 1000
         uint vestingTermInBlocks;
         string imageURL;
@@ -80,31 +91,41 @@ contract ProtocolDistributor{
         mapping(string => uint) userBondArchive;
     }
 
+    //Staking Reward Settings
     struct StakingReward{
         uint protocolRewardAmount;
         uint everyBlockAmount;
     }
 
+//----END STRUCTS----//
+
+
+    //Construct This Baby
     constructor() {
         manager = msg.sender;
     }
 
-    function initialize(uint _epochLength, uint _nextEpochBlock) public isManager returns (bool success){
+
+    //Add Epoch Info, Used for Staking and Bonds
+    function initializeEpoch(uint _epochLength, uint _nextEpochBlock) public isManager returns (bool success){
         epochLength = _epochLength;
         nextEpochBlock = _nextEpochBlock;
         return true;
     }
 
+    //Sets the Depository Contract
     function setDepositoryContract(address _assetDepositoryContract) public isManager returns (bool success){
         assetDepository = _assetDepositoryContract;
         return true;
     }
 
+    //Sets the Calculator Contract
     function setCalculatorContract(address _protocolCalculatorOracleContract) public isManager returns (bool success){
         protocolCalculatorOracle = _protocolCalculatorOracleContract;
         return true;
     }
 
+    //Changes Staking Reward
     function setStakingReward(uint _protocolRewardAmount, uint _everyBlockAmount) public isManager returns (bool success){
         require(_checkResolution(_everyBlockAmount), "This Is Not Set To Propper Resolution");
         stakingReward.protocolRewardAmount = _protocolRewardAmount;
@@ -112,43 +133,50 @@ contract ProtocolDistributor{
         return true;
     }
 
+    //Add a New Bond
     function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, string calldata _imageURL) public isManager returns (bool success){
         
+        //Create New Bond
         Bond memory newBond = Bond({
-            name: _name,
-            tokenAddress: _tokenAddress,
+            name: _name, //Bond Name
+            tokenAddress: _tokenAddress, //Purchase Token
             isAuthorized: false,
-            isLiquidityToken: _isLiquidityToken,
-            isProtocolLiquidity: _isProtocolLiquidity,
-            mainLiquidityPair: _mainLiquidityPair,
-            multiplier: _multiplier,
-            vestingTermInBlocks: _vestingTermInBlocks,
-            imageURL: _imageURL
+            isLiquidityToken: _isLiquidityToken, //Is this an LP
+            isProtocolLiquidity: _isProtocolLiquidity, //Is it paired with Protocol Token
+            mainLiquidityPair: _mainLiquidityPair, //LP Pair for the Token, if isLiquidity then Duplicate
+            multiplier: _multiplier, //Out of 1000, 500 = %50 increase, 250 = %25 increase
+            vestingTermInBlocks: _vestingTermInBlocks, //Bond Finialization Time
+            imageURL: _imageURL //For Website Generation
         });
 
-        bondList.push(newBond);
-        bondArchive[_name] = (bondList.length).sub(1);
-        whichBond[_tokenAddress] = (bondList.length).sub(1);
+        bondList.push(newBond); //Push Bonds to BondsList
+        bondArchive[_name] = (bondList.length).sub(1); //Update Archive
+        whichBond[_tokenAddress] = (bondList.length).sub(1); //Update Bond
         return true;
     }
 
+    //Gets Bond Name from Index
     function getBondName(uint _index) public view returns (string memory bondName) {
         require(_index < bondList.length, "Index Is Out Of Bounds");
         return bondList[_index].name;
     }
 
+    //Gets Bond by Name
     function getBondByName(string calldata _bondName) public view returns (Bond memory bond) {
         return bondList[bondArchive[_bondName]];
     }
 
+    //Gets Bond by Index
     function getBondByID(uint _index) public view returns (Bond memory bond) {
         return bondList[_index];
     }
 
+    //Lists out all Bonds
     function listBonds() public view returns (Bond[] memory bonds){
         return bondList;
     }
 
+    //Toggles a Bond on or Off
     function toggleBondAuthorization(string calldata _bondName) public isManager returns (bool success) {
         if( bondList[bondArchive[_bondName]].isAuthorized == true){
             bondList[bondArchive[_bondName]].isAuthorized = false;
@@ -158,10 +186,12 @@ contract ProtocolDistributor{
         return true;
     }
     
+    //Checks UserBondTerms for an Address
     function checkUserBond(address _userAddress, string calldata _bondName) public view returns (UserBondTerms memory) {
        return userProfile[_userAddress].userBondList[userProfile[_userAddress].userBondArchive[_bondName]];
     }
 
+    //Lists All Users Bonds
     function listUserBonds(address _userAddress) public view returns (UserBondTerms[] memory) {
        return userProfile[_userAddress].userBondList;
     }
@@ -181,12 +211,13 @@ contract ProtocolDistributor{
         return true;
     }
 
-
+    //Gets Current Block
     function currentBlock() public view returns (uint blocks) {
         return block.number;
     }
 
 
+    //Stakes Coin By Wrapping
     function stake(uint _tokenAmount, address _user) public returns (bool success){
 
 
@@ -194,11 +225,13 @@ contract ProtocolDistributor{
         return true;
     }
 
-    //function unStake() public returns (bool success){
+    //Unstakes Coin By Unwrapping
+    function unStake(uint _tokenAmount, address _user) public returns (bool success){
 
-    //    return true;
-    //}
+        return true;
+    }
 
+    //Adds a Userbond to Deposits 
     function deposit(address _bondToken, uint _tokenAmount, address _user) public returns (bool success){
 
         uint bondID = whichBond[_bondToken]; //Get Bond ID
@@ -256,6 +289,7 @@ contract ProtocolDistributor{
         return true;
     }
 
+    //Adjusts Information to Claim Bonds
     function claimBond(string calldata _bondName, address _user) public returns (bool success){
         require(claimAmountForBond(_bondName, _user) > 0);
         uint userBondArchive = userProfile[_user].userBondArchive[_bondName];
@@ -270,7 +304,7 @@ contract ProtocolDistributor{
         return true;
     }
 
-    
+    //Gets The Amount Needed to CLaim
     function claimAmountForBond(string calldata _bondName, address _user) public view returns (uint){
     
         uint userBondArchive = userProfile[_user].userBondArchive[_bondName];
