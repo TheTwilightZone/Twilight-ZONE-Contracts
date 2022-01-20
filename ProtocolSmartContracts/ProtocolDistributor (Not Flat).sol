@@ -201,25 +201,56 @@ contract ProtocolDistributor{
 
     function deposit(address _bondToken, uint _tokenAmount, address _user) public returns (bool success){
 
-        uint bondID = whichBond[_bondToken];
-        Bond memory theBond = getBondByID(bondID);
-        require(theBond.isAuthorized == true, "This Token Is Not Authorized");
+        uint bondID = whichBond[_bondToken]; //Get Bond ID
+        Bond memory theBond = getBondByID(bondID); //Pull Bond
+
+        require(theBond.isAuthorized == true, "This Token Is Not Authorized"); //Require Authorization
+       
+        //Get Bond Value In Protocol Amount
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
         
         
-        uint userBondArchive = userProfile[_user].userBondArchive[theBond.name];
+        uint userBondArchive = userProfile[_user].userBondArchive[theBond.name]; //Get Bond Index for User
+        uint bondListNumber = userProfile[_user].userBondList.length; //Get BondList Lenght
+
+        //Checks If BondTerms Exsist, If Not, Create
+        if(userProfile[_user].userBondList[userBondArchive].name != theBond.name){
+            userProfile[_user].userBondArchive[theBond.name] = bondListNumber; //Updates The Index Externally
+            userBondArchive = bondListNumber; //Updates The Index Locally
+
+            //Adds Empty BondTerms
+            userProfile[_user].userBondList[userBondArchive] =  UserBondTerms({
+                name: theBond.name,
+                totalProtocolAmount: 0,
+                initialBondBlock: 0,
+                finalBondBlock: 0,
+                claimedAmount: 0,
+                totalProtocolProfit: 0
+            });
+
+        }
+
+        //Copies External UserBondTerms and creates Local
         UserBondTerms memory newTerms = userProfile[_user].userBondList[userBondArchive];
-        
+
+        //Calculates Bond Profit
         uint profit = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondProfitInProtocolAmount(_bondToken, _tokenAmount);
 
+        //Adds Profit To Local BondTerms
         newTerms.totalProtocolAmount = newTerms.totalProtocolAmount.add(protocolValue.add(profit));
         
+        //Changes Initial Block Only if 0
         if (newTerms.initialBondBlock <= 0){
             newTerms.initialBondBlock = currentBlock();
         }
+
+        //Sets Final Bond Block
         newTerms.finalBondBlock = currentBlock().add(theBond.vestingTermInBlocks);
+
+        //Updates Total Profit Recieved From Bond
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit); 
 
+        //Merges Local With External
         userProfile[_user].userBondList[userBondArchive] = newTerms;
 
         return true;
@@ -277,6 +308,13 @@ contract ProtocolDistributor{
     //function _calculateProtocolBondingReward() private view returns (){
         
     //}
+
+    //Managment Function
+    function changeManager(address _newManager) public isManager returns (bool success) {
+        emit ManagerChange(manager, _newManager);
+        manager = _newManager;
+        return true;
+    }
 
 
     //Modifiers
