@@ -247,7 +247,7 @@ contract ProtocolDistributor{
         uint bondListNumber = userProfile[_user].userBondList.length; //Get BondList Lenght
 
         //Checks If BondTerms Exsist, If Not, Create
-        if(userProfile[_user].userBondList[userBondArchive].name != theBond.name){
+        if(_compareStrings(userProfile[_user].userBondList[userBondArchive].name, theBond.name) == false){
             userProfile[_user].userBondArchive[theBond.name] = bondListNumber; //Updates The Index Externally
             userBondArchive = bondListNumber; //Updates The Index Locally
 
@@ -332,7 +332,9 @@ contract ProtocolDistributor{
         return false;
     }
 
-
+    function _compareStrings(string memory a, string memory b) private view returns (bool) {
+    return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
 
 
     //function _calculateProtocolStakingReward(uint _protocolAmount) private view returns (uint){
