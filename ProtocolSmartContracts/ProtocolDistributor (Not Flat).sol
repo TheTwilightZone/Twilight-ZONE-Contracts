@@ -88,6 +88,7 @@ contract ProtocolDistributor{
     //User Profile for Staking and Bonds
     struct AccountProfile{
         UserBondTerms[] userBondList;
+        mapping(string => bool) isInitialized;
         mapping(string => uint) userBondArchive;
     }
 
@@ -188,7 +189,9 @@ contract ProtocolDistributor{
     
     //Checks UserBondTerms for an Address
     function checkUserBond(address _userAddress, string calldata _bondName) public view returns (UserBondTerms memory) {
-       return userProfile[_userAddress].userBondList[userProfile[_userAddress].userBondArchive[_bondName]];
+       uint userBondID = userProfile[_user].userBondArchive[theBond.name];
+       require(userProfile[_userAddress].isInitialized[_bondName], "Bond Is Not Initialized");
+       return userProfile[_userAddress].userBondList[userBondID];
     }
 
     //Lists All Users Bonds
@@ -238,33 +241,32 @@ contract ProtocolDistributor{
         Bond memory theBond = getBondByID(bondID); //Pull Bond
 
         require(theBond.isAuthorized == true, "This Token Is Not Authorized"); //Require Authorization
-       
+        
         //Get Bond Value In Protocol Amount
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
-        
-        
-        uint userBondArchive = userProfile[_user].userBondArchive[theBond.name]; //Get Bond Index for User
         uint bondListNumber = userProfile[_user].userBondList.length; //Get BondList Lenght
 
-        //Checks If BondTerms Exsist, If Not, Create
-        if(_compareStrings(userProfile[_user].userBondList[userBondArchive].name, theBond.name) == false){
-            userProfile[_user].userBondArchive[theBond.name] = bondListNumber; //Updates The Index Externally
-            userBondArchive = bondListNumber; //Updates The Index Locally
-
-            //Adds Empty BondTerms
-            userProfile[_user].userBondList[userBondArchive] =  UserBondTerms({
+        //Handles Empty Data
+        if(userProfile[_user].isInitialized[theBond.name] == false){
+            userProfile[_user].userBondList.push(UserBondTerms({
                 name: theBond.name,
                 totalProtocolAmount: 0,
                 initialBondBlock: 0,
                 finalBondBlock: 0,
                 claimedAmount: 0,
                 totalProtocolProfit: 0
-            });
-
+            }));
+            userProfile[_user].isInitialized[theBond.name] = true;
+            userProfile[_user].userBondArchive[theBond.name] = bondListNumber;
         }
 
+        uint userBondID = userProfile[_user].userBondArchive[theBond.name];
+
+        //Require BondTerms Exsis
+        require(_compareStrings(userProfile[_user].userBondList[userBondID].name, theBond.name));
+
         //Copies External UserBondTerms and creates Local
-        UserBondTerms memory newTerms = userProfile[_user].userBondList[userBondArchive];
+        UserBondTerms memory newTerms = userProfile[_user].userBondList[userBondID];
 
         //Calculates Bond Profit
         uint profit = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondProfitInProtocolAmount(_bondToken, _tokenAmount);
@@ -284,21 +286,22 @@ contract ProtocolDistributor{
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit); 
 
         //Merges Local With External
-        userProfile[_user].userBondList[userBondArchive] = newTerms;
+        userProfile[_user].userBondList[userBondID] = newTerms;
 
         return true;
     }
 
     //Adjusts Information to Claim Bonds
     function claimBond(string calldata _bondName, address _user) public returns (bool success){
-        require(claimAmountForBond(_bondName, _user) > 0);
-        uint userBondArchive = userProfile[_user].userBondArchive[_bondName];
-        userProfile[_user].userBondList[userBondArchive].claimedAmount += claimAmountForBond(_bondName, _user);
-        if(userProfile[_user].userBondList[userBondArchive].finalBondBlock >= currentBlock()){
-            userProfile[_user].userBondList[userBondArchive].totalProtocolAmount = 0;
-            userProfile[_user].userBondList[userBondArchive].initialBondBlock = 0;
-            userProfile[_user].userBondList[userBondArchive].claimedAmount = 0;
-            userProfile[_user].userBondList[userBondArchive].totalProtocolProfit = 0;
+        require(claimAmountForBond(_bondName, _user) > 0, "You Have Nothing To Claim");
+        require(userProfile[_user].isInitialized[theBond.name], "For Some Reason Your Bond Isn't Initialized");
+        uint userBondID = userProfile[_user].userBondArchive[theBond.name]; //Get Bond ID
+        userProfile[_user].userBondList[userBondID].claimedAmount += claimAmountForBond(_bondName, _user);
+        if(userProfile[_user].userBondList[userBondID].finalBondBlock >= currentBlock()){
+            userProfile[_user].userBondList[userBondID].totalProtocolAmount = 0;
+            userProfile[_user].userBondList[userBondID].initialBondBlock = 0;
+            userProfile[_user].userBondList[userBondID].claimedAmount = 0;
+            userProfile[_user].userBondList[userBondID].totalProtocolProfit = 0;
         }
 
         return true;
@@ -307,8 +310,8 @@ contract ProtocolDistributor{
     //Gets The Amount Needed to CLaim
     function claimAmountForBond(string calldata _bondName, address _user) public view returns (uint){
     
-        uint userBondArchive = userProfile[_user].userBondArchive[_bondName];
-        UserBondTerms memory bondTerms = userProfile[_user].userBondList[userBondArchive];
+        uint userBondID = userProfile[_user].userBondArchive[theBond.name]; //Get Bond ID
+        UserBondTerms memory bondTerms = userProfile[_user].userBondList[userBondID];
         require(bondTerms.finalBondBlock >= currentBlock());
 
         uint protocolDelta = bondTerms.finalBondBlock.sub(bondTerms.initialBondBlock);
@@ -332,8 +335,9 @@ contract ProtocolDistributor{
         return false;
     }
 
+
     function _compareStrings(string memory a, string memory b) private view returns (bool) {
-    return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    return (keccak256(bytes(a)) == keccak256(bytes(b)));
     }
 
 
