@@ -15,13 +15,13 @@ contract Twilight is ERC20, Ownable {
     uint public protocolReservoir;
 
     function mint(address to, uint256 _amount) public onlyOwner returns(bool) {
-        protocolReservoir = protocolReservoir.add(twilightToProtocol(_amount));
+        protocolReservoir = protocolReservoir.add(reserveToProtocol(_amount));
         _mint(to, _amount);
         return true;
     }
 
     function burn(address to, uint256 _amount) public onlyOwner returns(bool) {
-        protocolReservoir = protocolReservoir.sub(twilightToProtocol(_amount));
+        protocolReservoir = protocolReservoir.sub(reserveToProtocol(_amount));
         _burn(to, _amount);
         return true;
     }
