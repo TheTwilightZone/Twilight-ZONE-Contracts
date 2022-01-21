@@ -1,5 +1,5 @@
 pragma solidity ^ 0.8.0;
-import "https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/FullMath.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/ProtocolSmartContracts/FullMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
 
 
@@ -189,7 +189,7 @@ contract ProtocolDistributor{
     
     //Checks UserBondTerms for an Address
     function checkUserBond(address _userAddress, string calldata _bondName) public view returns (UserBondTerms memory) {
-       uint userBondID = userProfile[_user].userBondArchive[theBond.name];
+       uint userBondID = userProfile[_userAddress].userBondArchive[_bondName];
        require(userProfile[_userAddress].isInitialized[_bondName], "Bond Is Not Initialized");
        return userProfile[_userAddress].userBondList[userBondID];
     }
@@ -221,18 +221,15 @@ contract ProtocolDistributor{
 
 
     //Stakes Coin By Wrapping
-    function stake(uint _tokenAmount, address _user) public returns (bool success){
-
-
-
-        return true;
-    }
+    //function stake(uint _tokenAmount, address _user) public returns (bool success){
+        //return true;
+    //}
 
     //Unstakes Coin By Unwrapping
-    function unStake(uint _tokenAmount, address _user) public returns (bool success){
+    //function unStake(uint _tokenAmount, address _user) public returns (bool success){
 
-        return true;
-    }
+        //return true;
+    //}
 
     //Adds a Userbond to Deposits 
     function deposit(address _bondToken, uint _tokenAmount, address _user) public returns (bool success){
@@ -294,8 +291,8 @@ contract ProtocolDistributor{
     //Adjusts Information to Claim Bonds
     function claimBond(string calldata _bondName, address _user) public returns (bool success){
         require(claimAmountForBond(_bondName, _user) > 0, "You Have Nothing To Claim");
-        require(userProfile[_user].isInitialized[theBond.name], "For Some Reason Your Bond Isn't Initialized");
-        uint userBondID = userProfile[_user].userBondArchive[theBond.name]; //Get Bond ID
+        require(userProfile[_user].isInitialized[_bondName], "For Some Reason Your Bond Isn't Initialized");
+        uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
         userProfile[_user].userBondList[userBondID].claimedAmount += claimAmountForBond(_bondName, _user);
         if(userProfile[_user].userBondList[userBondID].finalBondBlock >= currentBlock()){
             userProfile[_user].userBondList[userBondID].totalProtocolAmount = 0;
@@ -310,7 +307,7 @@ contract ProtocolDistributor{
     //Gets The Amount Needed to CLaim
     function claimAmountForBond(string calldata _bondName, address _user) public view returns (uint){
     
-        uint userBondID = userProfile[_user].userBondArchive[theBond.name]; //Get Bond ID
+        uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
         UserBondTerms memory bondTerms = userProfile[_user].userBondList[userBondID];
         require(bondTerms.finalBondBlock >= currentBlock());
 
@@ -336,7 +333,7 @@ contract ProtocolDistributor{
     }
 
 
-    function _compareStrings(string memory a, string memory b) private view returns (bool) {
+    function _compareStrings(string memory a, string memory b) private pure returns (bool) {
     return (keccak256(bytes(a)) == keccak256(bytes(b)));
     }
 
