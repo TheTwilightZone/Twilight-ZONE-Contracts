@@ -293,10 +293,11 @@ contract ProtocolDistributor{
         require(claimAmountForBond(_bondName, _user) > 0, "You Have Nothing To Claim");
         require(userProfile[_user].isInitialized[_bondName], "For Some Reason Your Bond Isn't Initialized");
         uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
-        userProfile[_user].userBondList[userBondID].claimedAmount += claimAmountForBond(_bondName, _user);
-        if(userProfile[_user].userBondList[userBondID].finalBondBlock >= currentBlock()){
+        userProfile[_user].userBondList[userBondID].claimedAmount = userProfile[_user].userBondList[userBondID].claimedAmount.add(claimAmountForBond(_bondName, _user));
+        if(userProfile[_user].userBondList[userBondID].finalBondBlock <= currentBlock()){
             userProfile[_user].userBondList[userBondID].totalProtocolAmount = 0;
             userProfile[_user].userBondList[userBondID].initialBondBlock = 0;
+            userProfile[_user].userBondList[userBondID].finalBondBlock = 0;
             userProfile[_user].userBondList[userBondID].claimedAmount = 0;
             userProfile[_user].userBondList[userBondID].totalProtocolProfit = 0;
         }
