@@ -34,7 +34,7 @@ contract Twilight is ERC20, Ownable {
         return false;
     }
 
-    function protocolToTwilight(uint256 _amount) public view returns(uint){
+    function protocolToReserve(uint256 _amount) public view returns(uint){
         uint returnValue;
         if(protocolReservoir == 0){
            returnValue = _amount; 
@@ -44,7 +44,7 @@ contract Twilight is ERC20, Ownable {
         return returnValue;
     }
 
-    function twilightToProtocol(uint256 _amount) public view returns(uint){
+    function reserveToProtocol(uint256 _amount) public view returns(uint){
         uint returnValue;
         if(protocolReservoir == 0){
            returnValue = _amount; 
