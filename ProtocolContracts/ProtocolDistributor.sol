@@ -24,8 +24,10 @@ interface IUniswapV2Pair {
 //Protocol Token Interface
 interface IProtocolERC20 {
     function mint(address to, uint256 _amount) external returns(bool);
-    function burn(address account_, uint256 amount_) external;
+    function burn(address account_, uint256 amount_) external returns(bool);
     function protocolToReserve(uint256 _amount) external view returns(uint);
+    function addToReservoir(uint _amount) external view returns(bool);
+    function protocolReservoir() external view returns(uint);
 }
 
 //Bleh - Disgusting
@@ -108,6 +110,7 @@ contract ProtocolDistributor{
     struct StakingReward{            
         uint protocolRewardAmount;   //Protocol Token Reward Amount Per [One Token = (10 ** Decimals())]
         uint everyBlockAmount;       //Distribute Rewards After This Many Blocks
+        uint nextRewardBlock;        //Next Rewarded Is Distributed On This Block
     }
 
     //Epoch Info
@@ -134,7 +137,7 @@ contract ProtocolDistributor{
     }
 
     //Initialize Important Settings
-    function initialize(uint _epochLength, uint _nextEpochBlock, address _assetDepositoryContract, address _protocolCalculatorOracleContract) public isManager returns (bool success){
+    function initialize(uint _epochLength, uint _nextEpochBlock, address _protocolCalculatorOracleContract, address _assetDepositoryContract) public isManager returns (bool success){
         epochInfo.epochLength = _epochLength;
         epochInfo.nextEpochBlock = _nextEpochBlock;
         protocolCalculatorOracle = _protocolCalculatorOracleContract;
@@ -274,26 +277,29 @@ contract ProtocolDistributor{
 
 //----REWARD MANAGEMENT FUCNTIONS----//
 
-    //Stakes Coin By Wrapping
+    //Stakes Coin By Burn MintWrapping
     function stake(uint _tokenAmount, address _user) public returns (bool success){
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
         uint mintAmount = IProtocolERC20( stakedToken ).protocolToReserve(_tokenAmount);                            //Determines Mint Amount
+        //require(IOhmERC20(  ).burnFrom())
         require(IProtocolERC20( stakedToken ).mint(_user, mintAmount), "Staked Token Not Minted For Some Reason");  //Require Mint Tokens
         emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit
+        blockUpdate();                                                                                              //Routine
         return true;                                                                                                //Ship It
     }
 
-    //Unstakes Coin By Unwrapping
-    //function unStake(uint _tokenAmount, address _user) public returns (bool success){
+    //Unstakes Coin By Burn MintWrapping
+    function unStake(uint _tokenAmount, address _user) public returns (bool success){
 
-        //return true;
-    //}
+        blockUpdate();
+        return true;
+    }
 
     //Adds a Userbond to Deposits 
     function deposit(address _bondToken, uint _tokenAmount, address _user) public returns (bool success){
-        uint bondID = whichBond[_bondToken];       //Get Bond ID
-        Bond memory theBond = getBondByID(bondID); //Pull Bond
-        require(theBond.isAuthorized == true, "This Token Is Not Authorized"); //Require Token Authorization
+        uint bondID = whichBond[_bondToken];                                    //Get Bond ID
+        Bond memory theBond = getBondByID(bondID);                              //Pull Bond
+        require(theBond.isAuthorized == true, "This Token Is Not Authorized");  //Require Token Authorization
         
         //Get Bond Value In Protocol Amount
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
@@ -334,6 +340,7 @@ contract ProtocolDistributor{
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit);    //Updates Total Profit Recieved From Bond
         userProfile[_user].userBondList[userBondID] = newTerms;                     //Merges Local With External
         emit BondDeposited(_user, bondID, currentBlock(), _tokenAmount);            //Log That Shit
+        blockUpdate();                                                              //Routine
         return true;                                                                //Ship It
     }
 
@@ -350,7 +357,8 @@ contract ProtocolDistributor{
             userProfile[_user].userBondList[userBondID].claimedAmount = 0;
             userProfile[_user].userBondList[userBondID].totalProtocolProfit = 0;
         }
-
+        emit BondAmountClaimed(_user, claimAmountForBond(_bondName, _user), currentBlock());
+        blockUpdate();
         return true;
     }
 
@@ -366,17 +374,25 @@ contract ProtocolDistributor{
 
     //Keep The Block Up To Date
     function blockUpdate() public returns (bool success){
-        
-        
-        if ( epochInfo.nextEpochBlock <= block.number ) {
+        if ( epochInfo.nextEpochBlock <= currentBlock() ) {
             epochInfo.nextEpochBlock = epochInfo.nextEpochBlock.add( epochInfo.epochLength );
         }
-
-        //if ( nextRewardBlock() <= block.number) {
-
-        //}
-
+        distribute();
         return true;
+    }
+
+    //Distribute Staking Rewards
+    function distribute() public returns (bool success){
+        if ( stakingReward.nextRewardBlock <= currentBlock()) {
+            address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();
+            uint reservoirAmount = IProtocolERC20( stakedToken ).protocolReservoir();
+            uint mintAmount = IProtocolCalculatorOracle( protocolCalculatorOracle ).calculateProtocolStakingReward(reservoirAmount);
+            require(IProtocolERC20( stakedToken ).addToReservoir(mintAmount), "Failed To Add To Staking Reservoir");
+            emit RewardDistributed(mintAmount, stakingReward.nextRewardBlock);
+            stakingReward.nextRewardBlock = stakingReward.nextRewardBlock.add(stakingReward.everyBlockAmount);
+            return true;
+        }
+        return false;
     }
 
     //Gets Current Block
