@@ -1,5 +1,5 @@
 pragma solidity ^ 0.8.0;
-import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/ProtocolSmartContracts/FullMath.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/DependencyContracts/FullMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
 
 
