@@ -26,14 +26,18 @@ interface IProtocolERC20 {
     function mint(address to, uint256 _amount) external returns(bool);
     function burn(address account_, uint256 amount_) external returns(bool);
     function protocolToReserve(uint256 _amount) external view returns(uint);
+    function reserveToProtocol(uint256 _amount) external view returns(uint);
     function addToReservoir(uint _amount) external view returns(bool);
     function protocolReservoir() external view returns(uint);
+    function owner() external view returns (address);
 }
 
 //Bleh - Disgusting
 interface IOhmERC20 {
     function burnFrom(address account_, uint256 amount_) external;
     function mint(address account_, uint256 amount_) external;
+    function allowance(address owner, address spender) external view returns (uint256);
+    function owner() external view returns (address);
 }
 
 //Calculator Interface
@@ -41,7 +45,9 @@ interface IProtocolCalculatorOracle {
     function bondValueInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns ( uint );
     function bondProfitInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns (uint);
     function stakedProtocolToken() external view returns (address);
+    function protocolToken() external view returns (address);
     function calculateProtocolStakingReward(uint _protocolAmount) external view returns (uint);
+
 }
 
 
@@ -278,10 +284,14 @@ contract ProtocolDistributor{
 //----REWARD MANAGEMENT FUCNTIONS----//
 
     //Stakes Coin By Burn MintWrapping
-    function stake(uint _tokenAmount, address _user) public returns (bool success){
+    function stake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
+        address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "Contract Is Not Protocol Token Owner");
+        require(address(this) == IProtocolERC20( stakedToken ).owner(), "Contract Is Not Staked Token Owner");
         uint mintAmount = IProtocolERC20( stakedToken ).protocolToReserve(_tokenAmount);                            //Determines Mint Amount
-        //require(IOhmERC20(  ).burnFrom())
+        require(IOhmERC20( protocolToken ).allowance(assetDepository, address(this)) >= _tokenAmount, "Asset Depository Contract Needs To Approve");
+        IOhmERC20( protocolToken ).burnFrom(assetDepository, _tokenAmount);                                           //Burn The Fake Money
         require(IProtocolERC20( stakedToken ).mint(_user, mintAmount), "Staked Token Not Minted For Some Reason");  //Require Mint Tokens
         emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit
         blockUpdate();                                                                                              //Routine
@@ -289,14 +299,21 @@ contract ProtocolDistributor{
     }
 
     //Unstakes Coin By Burn MintWrapping
-    function unStake(uint _tokenAmount, address _user) public returns (bool success){
-
+    function unStake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
+        address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
+        address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "Contract Is Not Protocol Token Owner");
+        require(address(this) == IProtocolERC20( stakedToken ).owner(), "Contract Is Not Staked Token Owner");
+        uint mintAmount = IProtocolERC20( stakedToken ).reserveToProtocol(_tokenAmount);                            //Determines Mint Amount
+        require(IProtocolERC20( stakedToken ).burn(assetDepository, mintAmount), "Staked Token Not Burned For Some Reason");
+        IOhmERC20( protocolToken ).mint(_user, mintAmount); 
+        emit ProtocolUnStaked(_user, mintAmount);
         blockUpdate();
         return true;
     }
 
     //Adds a Userbond to Deposits 
-    function deposit(address _bondToken, uint _tokenAmount, address _user) public returns (bool success){
+    function deposit(address _bondToken, uint _tokenAmount, address _user) public isDepositor returns (bool success){
         uint bondID = whichBond[_bondToken];                                    //Get Bond ID
         Bond memory theBond = getBondByID(bondID);                              //Pull Bond
         require(theBond.isAuthorized == true, "This Token Is Not Authorized");  //Require Token Authorization
@@ -345,7 +362,7 @@ contract ProtocolDistributor{
     }
 
     //Adjusts Information to Claim Bonds
-    function claimBond(string calldata _bondName, address _user) public returns (bool success){
+    function claimBond(string calldata _bondName, address _user) public isDepositor returns (bool success){
         require(claimAmountForBond(_bondName, _user) > 0, "You Have Nothing To Claim");
         require(userProfile[_user].isInitialized[_bondName], "For Some Reason Your Bond Isn't Initialized");
         uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
