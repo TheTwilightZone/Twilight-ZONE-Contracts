@@ -316,6 +316,7 @@ contract ProtocolDistributor{
     function deposit(address _bondToken, uint _tokenAmount, address _user) public isDepositor returns (bool success){
         uint bondID = whichBond[_bondToken];                                    //Get Bond ID
         Bond memory theBond = getBondByID(bondID);                              //Pull Bond
+        require(_bondToken == theBond.tokenAddress, "Bond Doesn't Match");
         require(theBond.isAuthorized == true, "This Token Is Not Authorized");  //Require Token Authorization
         
         //Get Bond Value In Protocol Amount
