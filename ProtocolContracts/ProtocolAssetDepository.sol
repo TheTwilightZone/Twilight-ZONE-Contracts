@@ -40,6 +40,11 @@ contract ProtocolAssetDepository{
     address public manager;                                  //Owner Of Contract [MultiSig]
     address public protocolCalculatorOracle;                 //Calculator Contract
 
+    //Construct This Baby
+    constructor() {
+        manager = msg.sender;
+    }
+
     function setProtocolCalculatorOracle(address _calculatorContract) public isManager returns(bool){
         protocolCalculatorOracle = _calculatorContract;
         return true;
@@ -77,6 +82,12 @@ contract ProtocolAssetDepository{
     function claimBond(string calldata _bondName) public returns (bool){
         address protocolDistributor = IProtocolCalculatorOracle( protocolCalculatorOracle ).ProtocolDistributor();
         require(IProtocolDistributor( protocolDistributor ).claimBond(_bondName, msg.sender), "Failed To Distribute");
+        return true;
+    }
+
+    function changeManager(address _newManager) public isManager returns (bool success) {
+        emit ManagerChange(manager, _newManager);  
+        manager = _newManager;                    
         return true;
     }
 
