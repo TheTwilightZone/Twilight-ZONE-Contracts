@@ -174,6 +174,7 @@ contract ProtocolDistributor{
         require(IOhmERC20( protocolToken ).owner() == address(this), "This Contract Doesn't Own This Token");
         IProtocolERC20( stakedToken ).transferOwnership(_updatedContract);
         IOhmERC20( protocolToken ).transferOwnership(_updatedContract);
+        return true;
     }
 
     //Changes Staking Reward
