@@ -170,8 +170,8 @@ contract ProtocolDistributor{
     function newTokenOwner(address _updatedContract) public isManager returns (bool success){
         address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();
-        require(IProtocolERC20( stakedToken ).owner() == address(this), "This Contract Doesn't Own This Token");
-        require(IOhmERC20( protocolToken ).owner() == address(this), "This Contract Doesn't Own This Token");
+        require(IProtocolERC20( stakedToken ).owner() == address(this), "A");
+        require(IOhmERC20( protocolToken ).owner() == address(this), "A");
         IProtocolERC20( stakedToken ).transferOwnership(_updatedContract);
         IOhmERC20( protocolToken ).transferOwnership(_updatedContract);
         return true;
@@ -179,7 +179,6 @@ contract ProtocolDistributor{
 
     //Changes Staking Reward
     function setStakingReward(uint _protocolRewardAmount, uint _everyBlockAmount) public isManager returns (bool success){
-        require(_checkResolution(_everyBlockAmount), "This Is Not Set To Propper Resolution");  //HardCoded Set Intervals
         stakingReward.protocolRewardAmount = _protocolRewardAmount;
         stakingReward.everyBlockAmount = _everyBlockAmount;
         return true;
@@ -190,7 +189,7 @@ contract ProtocolDistributor{
         
         //Checks Duplicates
         if(bondList.length > 0){
-            require(bondList[bondArchive[_name]].isAuthorized != true, "You Have To DeAuthorize If You Want To Replace A Bond");
+            require(bondList[bondArchive[_name]].isAuthorized != true, "B");
         }
 
         //Create New Bond
@@ -246,7 +245,7 @@ contract ProtocolDistributor{
 
     //Gets Bond Name from Index
     function getBondName(uint _index) public view returns (string memory bondName) {
-        require(_index < bondList.length, "Index Is Out Of Bounds");
+        require(_index < bondList.length, "C");
         return bondList[_index].name;
     }
 
@@ -268,7 +267,7 @@ contract ProtocolDistributor{
     //Checks UserBondTerms for an Address
     function checkUserBond(address _userAddress, string calldata _bondName) public view returns (UserBondTerms memory) {
        uint userBondID = userProfile[_userAddress].userBondArchive[_bondName];
-       require(userProfile[_userAddress].isInitialized[_bondName], "Bond Is Not Initialized");
+       require(userProfile[_userAddress].isInitialized[_bondName], "D");
        return userProfile[_userAddress].userBondList[userBondID];
     }
 
@@ -304,12 +303,12 @@ contract ProtocolDistributor{
     function stake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
         address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
-        require(address(this) == IOhmERC20( protocolToken ).owner(), "Contract Is Not Protocol Token Owner");
-        require(address(this) == IProtocolERC20( stakedToken ).owner(), "Contract Is Not Staked Token Owner");
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
+        require(address(this) == IProtocolERC20( stakedToken ).owner(), "F");
         uint mintAmount = IProtocolERC20( stakedToken ).protocolToReserve(_tokenAmount);                            //Determines Mint Amount
-        require(IOhmERC20( protocolToken ).allowance(assetDepository, address(this)) >= _tokenAmount, "Asset Depository Contract Needs To Approve");
+        require(IOhmERC20( protocolToken ).allowance(assetDepository, address(this)) >= _tokenAmount, "G");
         IOhmERC20( protocolToken ).burnFrom(assetDepository, _tokenAmount);                                           //Burn The Fake Money
-        require(IProtocolERC20( stakedToken ).mint(_user, mintAmount), "Staked Token Not Minted For Some Reason");  //Require Mint Tokens
+        require(IProtocolERC20( stakedToken ).mint(_user, mintAmount), "H");  //Require Mint Tokens
         emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit
         blockUpdate();                                                                                              //Routine
         return true;                                                                                                //Ship It
@@ -319,10 +318,10 @@ contract ProtocolDistributor{
     function unStake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
         address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
-        require(address(this) == IOhmERC20( protocolToken ).owner(), "Contract Is Not Protocol Token Owner");
-        require(address(this) == IProtocolERC20( stakedToken ).owner(), "Contract Is Not Staked Token Owner");
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
+        require(address(this) == IProtocolERC20( stakedToken ).owner(), "F");
         uint mintAmount = IProtocolERC20( stakedToken ).reserveToProtocol(_tokenAmount);                            //Determines Mint Amount
-        require(IProtocolERC20( stakedToken ).burn(assetDepository, mintAmount), "Staked Token Not Burned For Some Reason");
+        require(IProtocolERC20( stakedToken ).burn(assetDepository, mintAmount), "H");
         IOhmERC20( protocolToken ).mint(_user, mintAmount); 
         emit ProtocolUnStaked(_user, mintAmount);
         blockUpdate();
@@ -333,8 +332,8 @@ contract ProtocolDistributor{
     function deposit(address _bondToken, uint _tokenAmount, address _user) public isDepositor returns (bool success){
         uint bondID = whichBond[_bondToken];                                    //Get Bond ID
         Bond memory theBond = getBondByID(bondID);                              //Pull Bond
-        require(_bondToken == theBond.tokenAddress, "Bond Doesn't Match");
-        require(theBond.isAuthorized == true, "This Token Is Not Authorized");  //Require Token Authorization
+        require(_bondToken == theBond.tokenAddress, "I");
+        require(theBond.isAuthorized == true, "J");  //Require Token Authorization
         
         //Get Bond Value In Protocol Amount
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
@@ -381,8 +380,8 @@ contract ProtocolDistributor{
 
     //Adjusts Information to Claim Bonds
     function claimBond(string calldata _bondName, address _user) public isDepositor returns (bool success){
-        require(claimAmountForBond(_bondName, _user) > 0, "You Have Nothing To Claim");
-        require(userProfile[_user].isInitialized[_bondName], "For Some Reason Your Bond Isn't Initialized");
+        require(claimAmountForBond(_bondName, _user) > 0, "K");
+        require(userProfile[_user].isInitialized[_bondName], "L");
         uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
         userProfile[_user].userBondList[userBondID].claimedAmount = userProfile[_user].userBondList[userBondID].claimedAmount.add(claimAmountForBond(_bondName, _user));
         if(userProfile[_user].userBondList[userBondID].finalBondBlock <= currentBlock()){
@@ -422,7 +421,7 @@ contract ProtocolDistributor{
             address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();
             uint reservoirAmount = IProtocolERC20( stakedToken ).protocolReservoir();
             uint mintAmount = IProtocolCalculatorOracle( protocolCalculatorOracle ).calculateProtocolStakingReward(reservoirAmount);
-            require(IProtocolERC20( stakedToken ).addToReservoir(mintAmount), "Failed To Add To Staking Reservoir");
+            require(IProtocolERC20( stakedToken ).addToReservoir(mintAmount), "M");
             emit RewardDistributed(mintAmount, stakingReward.nextRewardBlock);
             stakingReward.nextRewardBlock = stakingReward.nextRewardBlock.add(stakingReward.everyBlockAmount);
             return true;
@@ -449,20 +448,6 @@ contract ProtocolDistributor{
     function _compareStrings(string memory a, string memory b) private pure returns (bool) {
         return (keccak256(bytes(a)) == keccak256(bytes(b)));
     }
-
-    //Makes Things Managable For Rewards (No Wonk)
-    function _checkResolution(uint _blockAmount) private view returns (bool) {
-
-        if(_blockAmount == epochInfo.epochLength){return true;}
-        if(_blockAmount == epochInfo.epochLength.div(2)){return true;}
-        if(_blockAmount == epochInfo.epochLength.div(3)){return true;}
-        if(_blockAmount == epochInfo.epochLength.div(4)){return true;}
-        if(_blockAmount == epochInfo.epochLength.div(6)){return true;}
-        if(_blockAmount == epochInfo.epochLength.div(8)){return true;}
-        
-        return false;
-    }
-
 
 //----END INTERNAL FUNCTIONS----//
 
