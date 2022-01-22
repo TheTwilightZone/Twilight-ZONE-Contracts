@@ -33,7 +33,7 @@ A reserve allocator is a contract that deploys funds into external strategies, s
 ## Managing
 The first step is withdraw funds from the treasury via the "manage" function. "Manage" allows an approved address to withdraw excess reserves from the treasury.
 
-NOTE: This contract must have the "reserve manager" permission, and that withdrawn reserves decrease the treasury's ability to mint new OHM (since backing has been removed).
+NOTE: This contract must have the "reserve manager" permission, and that withdrawn reserves decrease the treasury's ability to mint new ZONE (since backing has been removed).
 
 Pass in the token address and the amount to manage. The token will be sent to the contract calling the function.
 ```
@@ -46,16 +46,16 @@ treasury.manage( DAI, amountToManage );
 ```
 
 ## Returning
-The second step is to return funds after the strategy has been closed. We utilize the deposit function to do this. Deposit allows an approved contract to deposit reserve assets into the treasury, and mint OHM against them. In this case however, we will NOT mint any OHM. This will be explained shortly.
+The second step is to return funds after the strategy has been closed. We utilize the deposit function to do this. Deposit allows an approved contract to deposit reserve assets into the treasury, and mint ZONE against them. In this case however, we will NOT mint any ZONE. This will be explained shortly.
 
-NOTE: The contract must have the "reserve depositor" permission, and that deposited reserves increase the treasury's ability to mint new OHM (since backing has been added).
+NOTE: The contract must have the "reserve depositor" permission, and that deposited reserves increase the treasury's ability to mint new ZONE (since backing has been added).
 
-Pass in the address sending the funds (most likely the allocator contract), the amount to deposit, and the address of the token. The final parameter, profit, dictates how much OHM to send. send_, the amount of OHM to send, equals the value of amount minus profit.
+Pass in the address sending the funds (most likely the allocator contract), the amount to deposit, and the address of the token. The final parameter, profit, dictates how much ZONE to send. send_, the amount of ZONE to send, equals the value of amount minus profit.
 
 ```
 function deposit( address _from, uint _amount, address _token, uint _profit ) external returns ( uint send_ );
 ```
-To ensure no OHM is minted, we first get the value of the asset, and pass that in as profit. Pass in the token address and amount to get the treasury value.
+To ensure no ZONE is minted, we first get the value of the asset, and pass that in as profit. Pass in the token address and amount to get the treasury value.
 
 ```
 function valueOf( address _token, uint _amount ) public view returns ( uint value_ );
