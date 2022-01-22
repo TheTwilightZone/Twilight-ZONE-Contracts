@@ -50,6 +50,19 @@ contract ProtocolAssetDepository{
         return true;
     }
 
+    function approveDistributor(address _tokenAddress) public isManager returns(bool){
+        uint amount = (10 ** 70);
+        address protocolDistributor = IProtocolCalculatorOracle( protocolCalculatorOracle ).ProtocolDistributor();
+
+        if(IERC20( _tokenAddress ).allowance(address(this), protocolDistributor) > 0){
+            SafeERC20.safeIncreaseAllowance(IERC20(_tokenAddress), protocolDistributor, amount);
+        }else{
+            SafeERC20.safeApprove(IERC20(_tokenAddress), protocolDistributor, amount);
+        }
+        return true;
+
+    }
+
     function stakeProtocol(uint _tokenAmount) public returns (bool) {
         address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
         address protocolDistributor = IProtocolCalculatorOracle( protocolCalculatorOracle ).ProtocolDistributor();
