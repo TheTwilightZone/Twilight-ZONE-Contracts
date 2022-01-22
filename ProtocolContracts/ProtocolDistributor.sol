@@ -321,7 +321,7 @@ contract ProtocolDistributor{
         require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
         require(address(this) == IProtocolERC20( stakedToken ).owner(), "F");
         uint mintAmount = IProtocolERC20( stakedToken ).reserveToProtocol(_tokenAmount);                            //Determines Mint Amount
-        require(IProtocolERC20( stakedToken ).burn(assetDepository, mintAmount), "H");
+        require(IProtocolERC20( stakedToken ).burn(assetDepository, _tokenAmount), "H");
         IOhmERC20( protocolToken ).mint(_user, mintAmount); 
         emit ProtocolUnStaked(_user, mintAmount);
         blockUpdate();
