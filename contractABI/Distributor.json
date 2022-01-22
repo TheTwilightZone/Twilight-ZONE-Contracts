@@ -1,0 +1,923 @@
+[
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_protocolAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_blockNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "BondAmountClaimed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_bondID",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_blockNumber",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_tokenAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "BondDeposited",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_previousManager",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_newManager",
+				"type": "address"
+			}
+		],
+		"name": "ManagerChange",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_protocolAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "ProtocolStaked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_protocolAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "ProtocolUnStaked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_protocolAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_blockNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardDistributed",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_tokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "_isLiquidityToken",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "_isProtocolLiquidity",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "_mainLiquidityPair",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_multiplier",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_vestingTermInBlocks",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_imageURL",
+				"type": "string"
+			}
+		],
+		"name": "addBond",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "assetDepository",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "blockUpdate",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_newManager",
+				"type": "address"
+			}
+		],
+		"name": "changeManager",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_userAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			}
+		],
+		"name": "checkUserBond",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalProtocolAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "initialBondBlock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "finalBondBlock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "claimedAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalProtocolProfit",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct ProtocolDistributor.UserBondTerms",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "claimAmountForBond",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "claimBond",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "currentBlock",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "blocks",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bondToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_tokenAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "deposit",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "distribute",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "epochInfo",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "epochLength",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "nextEpochBlock",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
+			}
+		],
+		"name": "getBondByID",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "isAuthorized",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isLiquidityToken",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isProtocolLiquidity",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "mainLiquidityPair",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "multiplier",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "vestingTermInBlocks",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "imageURL",
+						"type": "string"
+					}
+				],
+				"internalType": "struct ProtocolDistributor.Bond",
+				"name": "bond",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			}
+		],
+		"name": "getBondByName",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "isAuthorized",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isLiquidityToken",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isProtocolLiquidity",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "mainLiquidityPair",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "multiplier",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "vestingTermInBlocks",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "imageURL",
+						"type": "string"
+					}
+				],
+				"internalType": "struct ProtocolDistributor.Bond",
+				"name": "bond",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
+			}
+		],
+		"name": "getBondName",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "bondName",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_epochLength",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_nextEpochBlock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_protocolCalculatorOracleContract",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_assetDepositoryContract",
+				"type": "address"
+			}
+		],
+		"name": "initialize",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "listBonds",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "isAuthorized",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isLiquidityToken",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isProtocolLiquidity",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "mainLiquidityPair",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "multiplier",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "vestingTermInBlocks",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "imageURL",
+						"type": "string"
+					}
+				],
+				"internalType": "struct ProtocolDistributor.Bond[]",
+				"name": "bonds",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_userAddress",
+				"type": "address"
+			}
+		],
+		"name": "listUserBonds",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalProtocolAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "initialBondBlock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "finalBondBlock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "claimedAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalProtocolProfit",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct ProtocolDistributor.UserBondTerms[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "manager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "protocolCalculatorOracle",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_ID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "setBondValue",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_ID",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_contractAddress",
+				"type": "address"
+			}
+		],
+		"name": "setContract",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_protocolRewardAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_everyBlockAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "setStakingReward",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_tokenAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "stake",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "stakingReward",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "protocolRewardAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "everyBlockAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "nextRewardBlock",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_bondName",
+				"type": "string"
+			}
+		],
+		"name": "toggleBondAuthorization",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_tokenAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "unStake",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "whichBond",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
