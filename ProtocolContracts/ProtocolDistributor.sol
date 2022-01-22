@@ -285,8 +285,12 @@ contract ProtocolDistributor{
 
         uint protocolDelta = bondTerms.finalBondBlock.sub(bondTerms.initialBondBlock);
         uint currentDelta = currentBlock().sub(bondTerms.initialBondBlock);
-
-        return (FullMath.mulDiv(currentDelta, bondTerms.totalProtocolAmount, protocolDelta).sub(bondTerms.claimedAmount));
+        
+        if(bondTerms.finalBondBlock <= currentBlock()){
+            return (bondTerms.totalProtocolAmount.sub(bondTerms.claimedAmount))
+        }else{
+            return (FullMath.mulDiv(currentDelta, bondTerms.totalProtocolAmount, protocolDelta).sub(bondTerms.claimedAmount));
+        }
     }
 
 //----END PLEB FUCNTIONS----//
