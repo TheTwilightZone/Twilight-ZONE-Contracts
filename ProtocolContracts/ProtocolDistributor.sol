@@ -281,7 +281,7 @@ contract ProtocolDistributor{
     
         uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
         UserBondTerms memory bondTerms = userProfile[_user].userBondList[userBondID];
-        require(bondTerms.finalBondBlock >= currentBlock());
+        //require(bondTerms.finalBondBlock >= currentBlock());
 
         uint protocolDelta = bondTerms.finalBondBlock.sub(bondTerms.initialBondBlock);
         uint currentDelta = currentBlock().sub(bondTerms.initialBondBlock);
