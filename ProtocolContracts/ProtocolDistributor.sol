@@ -148,7 +148,7 @@ contract ProtocolDistributor{
     function initialize(uint _epochLength, uint _nextEpochBlock, uint _firstRewardBlock, address _protocolCalculatorOracleContract, address _assetDepositoryContract) public isManager returns (bool success){
         epochInfo.epochLength = _epochLength;
         epochInfo.nextEpochBlock = _nextEpochBlock;
-        stakingReward.nextRewardBlock = _firsRewardBlock;
+        stakingReward.nextRewardBlock = _firstRewardBlock;
         protocolCalculatorOracle = _protocolCalculatorOracleContract;
         assetDepository = _assetDepositoryContract;
         return true;
