@@ -174,7 +174,7 @@ contract ProtocolDistributor{
     //Add a New Bond
     function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, string calldata _imageURL) public isManager returns (bool success){
         
-        require(bondList[bondArchive[_name]].isAuthorized != true, "You Have To DeAuthorize If You Want To Replace A Bond");
+        //require(bondList[bondArchive[_name]].isAuthorized != true, "You Have To DeAuthorize If You Want To Replace A Bond");
 
         //Create New Bond
         Bond memory newBond = Bond({
@@ -294,7 +294,7 @@ contract ProtocolDistributor{
         IOhmERC20( protocolToken ).burnFrom(assetDepository, _tokenAmount);                                           //Burn The Fake Money
         require(IProtocolERC20( stakedToken ).mint(_user, mintAmount), "Staked Token Not Minted For Some Reason");  //Require Mint Tokens
         emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit
-        blockUpdate();                                                                                              //Routine
+        //blockUpdate();                                                                                              //Routine
         return true;                                                                                                //Ship It
     }
 
@@ -308,7 +308,7 @@ contract ProtocolDistributor{
         require(IProtocolERC20( stakedToken ).burn(assetDepository, mintAmount), "Staked Token Not Burned For Some Reason");
         IOhmERC20( protocolToken ).mint(_user, mintAmount); 
         emit ProtocolUnStaked(_user, mintAmount);
-        blockUpdate();
+        //blockUpdate();
         return true;
     }
 
@@ -358,7 +358,7 @@ contract ProtocolDistributor{
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit);    //Updates Total Profit Recieved From Bond
         userProfile[_user].userBondList[userBondID] = newTerms;                     //Merges Local With External
         emit BondDeposited(_user, bondID, currentBlock(), _tokenAmount);            //Log That Shit
-        blockUpdate();                                                              //Routine
+        //blockUpdate();                                                              //Routine
         return true;                                                                //Ship It
     }
 
@@ -376,7 +376,7 @@ contract ProtocolDistributor{
             userProfile[_user].userBondList[userBondID].totalProtocolProfit = 0;
         }
         emit BondAmountClaimed(_user, claimAmountForBond(_bondName, _user), currentBlock());
-        blockUpdate();
+        //blockUpdate();
         return true;
     }
 
