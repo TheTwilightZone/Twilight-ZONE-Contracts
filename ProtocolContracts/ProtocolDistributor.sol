@@ -396,7 +396,7 @@ contract ProtocolDistributor{
             userProfile[_user].userBondList[userBondID].totalProtocolProfit = 0;
         }
         emit BondAmountClaimed(_user, claimAmountForBond(_bondName, _user), currentBlock());
-        //blockUpdate();
+        blockUpdate();
         return true;
     }
 
