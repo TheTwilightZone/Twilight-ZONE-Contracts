@@ -16,7 +16,7 @@
 
 ## :construction_worker: How it all works:
 
-![myImage](https://github.com/OlympusDAO/olympus-contracts/blob/main/docs/box-diagram.png)
+![myImage](https://i.ibb.co/qWHXQg6/169-B0-D83-866-D-44-D8-B37-F-D13-E5506-E44-B.png) 
 
 |  Contract  |                   Address                  |        Notes        |
 |:----------:|:------------------------------------------:|:-------------------:|
