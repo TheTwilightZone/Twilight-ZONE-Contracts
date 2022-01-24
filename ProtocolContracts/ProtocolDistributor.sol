@@ -67,6 +67,7 @@ contract ProtocolDistributor{
     address public manager;                                  //Owner Of Contract [MultiSig]
     address public protocolCalculatorOracle;                 //Calculator Contract
     address public assetDepository;                          //Staking & Depositing OnRamp Contract
+    address public protocolLender;                           //Allows Minting Based For Loans
     EpochInfo public epochInfo;                              //Chain Epoch Information
     StakingReward public stakingReward;                      //Staking Reward Info
     mapping(string => uint) private bondArchive;             //Bond String To Bond Index
@@ -162,6 +163,8 @@ contract ProtocolDistributor{
         }else if (_ID == 1){
             assetDepository = _contractAddress;
             return true;
+        }else if(_ID == 2){
+            protocolLender = _contractAddress;
         }
         return false;
     }
@@ -302,6 +305,20 @@ contract ProtocolDistributor{
 
 
 //----REWARD MANAGEMENT FUCNTIONS----//
+
+    function mintProtocol(uint _tokenAmount, address _user) public isLender returns (bool success){
+        address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
+        IOhmERC20( protocolToken ).mint(_user, _tokenAmount); 
+        return true;
+    }
+    function burnProtocol(uint _tokenAmount, address _user) public isLender returns (bool success){
+        address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
+        require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
+        require(IOhmERC20( protocolToken ).allowance(protocolLender, address(this)) >= _tokenAmount, "G");
+        require(IProtocolERC20( stakedToken ).burn(protocolLender, _tokenAmount), "H");
+        blockUpdate(); 
+    }
 
     //Stakes Coin By Burn MintWrapping
     function stake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
@@ -469,6 +486,11 @@ contract ProtocolDistributor{
 
     modifier isDepositor() {
         require(msg.sender == assetDepository);
+        _;
+    }
+
+    modifier isLender() {
+        require(msg.sender == protocolLender);
         _;
     }
 //----END MODIFIERS----//

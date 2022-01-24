@@ -8,10 +8,10 @@ const distributorContractAddy = "0xcB110fc3d8CaeBC81eCa54D77E29E97fbC7497f9";
 
 test();
 async function test() {
-    console.log(await retrieveQuery(["PROTOCOL_STAKED_AMOUNT"]));
+    console.log(await retrieveQuery(["USER_PROFILE", "0xA45464bDDf0956D92D3C9d2DDDe7B8CB8b22ebFD"]));
 }
 
-async function retrieveQuery(_query) {
+async function retrieveQuery(query) {
 
     // - ["PROTOCOL_TOKEN_CONTRACT_ADDRESS"]
     // - ["STAKED_TOKEN_CONTRACT_ADDRESS"]
@@ -41,7 +41,7 @@ async function retrieveQuery(_query) {
     // - ["USER_TOKEN_BALANCE", "User Address", "Token Address"]
     // - ["TOKEN_DECIMALS", "Token Address"]
 
-    switch (_query[0]) {
+    switch (query[0]) {
 
         case "PROTOCOL_TOKEN_CONTRACT_ADDRESS":
             return (await (new KCC.eth.Contract(await retrieveABI('CALCULATOR_CONTRACT'), await retrieveQuery(['CALCULATOR_CONTRACT_ADDRESS']))).methods.protocolToken().call());
@@ -86,11 +86,11 @@ async function retrieveQuery(_query) {
         case "LIST_BONDS":
             return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.listBonds().call());
         case "USER_BOND_TERMS":
-            return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.listUserBonds(_query[1]).call());
+            return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.listUserBonds(query[1]).call());
         case "GET_BOND":
-            return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.getBondByName(_query[1]).call());;
+            return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.getBondByName(query[1]).call());
         case "BOND_PROFIT_PER_PROTOCOL":
-            let pullBond = await retrieveQuery(['GET_BOND', _query[1]]);
+            let pullBond = await retrieveQuery(['GET_BOND', query[1]]);
             return (10 ** await retrieveQuery(['PROTOCOL_DECIMALS'])) * (pullBond.multiplier / 1000);
         case "STAKED_TOKEN_DECIMALS":
             return (await (new KCC.eth.Contract(await retrieveABI('STAKED_TOKEN_CONTRACT'), await retrieveQuery(['STAKED_TOKEN_CONTRACT_ADDRESS']))).methods.decimals().call());
@@ -101,17 +101,61 @@ async function retrieveQuery(_query) {
         case "PROTOCOL_STAKED_AMOUNT":
             return (await (new KCC.eth.Contract(await retrieveABI('STAKED_TOKEN_CONTRACT'), await retrieveQuery(['STAKED_TOKEN_CONTRACT_ADDRESS']))).methods.protocolReservoir().call());
         case "TOKEN_DECIMALS":
-            return (await (new KCC.eth.Contract(await retrieveABI('STAKED_TOKEN_CONTRACT'), _query[1])).methods.protocolReservoir().call())
+            return (await (new KCC.eth.Contract(await retrieveABI('STAKED_TOKEN_CONTRACT'), query[1])).methods.protocolReservoir().call())
+        case "USER_PROTOCOL_TOKEN_BALANCE":
+            let bal = (await (new web3userctx.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), await retrieveQuery(['PROTOCOL_TOKEN_CONTRACT_ADDRESS']))).methods.balanceOf(query[1]).call());
+            return bal / (10 ** await retrieveQuery(['PROTOCOL_DECIMALS']));
+        case "USER_STAKED_TOKEN_BALANCE":
+            let sBal = (await (new web3userctx.eth.Contract(await retrieveABI('STAKED_TOKEN_CONTRACT'), await retrieveQuery(['STAKED_TOKEN_CONTRACT_ADDRESS']))).methods.balanceOf(query[1]).call());
+            return sBal / (10 ** await retrieveQuery(['STAKED_DECIMALS']));
+        case "USER_TOKEN_BALANCE":
+            return (await (new KCC.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), query[2])).methods.balanceOf(query[1]).call());;
+        case "STAKE_APY":
+            let baseToken = (10 ** await retrieveQuery(["PROTOCOL_DECIMALS"]));
+            let profit = await retrieveQuery(["PROTOCOL_REBASE_AMOUNT"])
+            let compoundTimeInSecconds = (await retrieveQuery(["PROTOCOL_REBASE_BLOCK_AMOUNT"]) * await retrieveQuery(["SECCONDS_PER_BLOCK"]));
+            let percentage = ((profit * baseToken) / 10000);
+            let periodsPerYear = (31536000 / compoundTimeInSecconds);
+            return (baseToken * (Math.pow((1 + (percentage / periodsPerYear)), (periodsPerYear * 1))));
+        case "PROTOCOL_REBASE_BLOCK_AMOUNT":
+            return (await (new KCC.eth.Contract(await retrieveABI('DISTRIBUTOR_CONTRACT'), await retrieveQuery(['DISTRIBUTOR_CONTRACT_ADDRESS']))).methods.stakingReward().call()).everyBlockAmount;
+        case "USER_PROFILE":
+            let profile = new userProfile("value");
+            profile.USER_ADDRESS = query[1];
+            profile.ZONE_BALANCE_CONTRACT = (await retrieveQuery(["USER_TOKEN_BALANCE", await retrieveQuery(['PROTOCOL_TOKEN_CONTRACT_ADDRESS']), profile.USER_ADDRESS]));
+            profile.ZONE_BALANCE_DECIMAL = ((await retrieveQuery(["PROTOCOL_DECIMALS"])) ** profile.ZONE_BALANCE_CONTRACT);
+            profile.TWILIGHT_BALANCE_CONTRACT = (await retrieveQuery(["USER_TOKEN_BALANCE", await retrieveQuery(['STAKED_TOKEN_CONTRACT_ADDRESS']), profile.USER_ADDRESS]));
+            profile.TWILIGHT_BALANCE_DECIMAL = ((await retrieveQuery(["STAKED_DECIMALS"])) ** profile.TWILIGHT_BALANCE_CONTRACT);
+            
+            if(await (new KCC.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), await retrieveQuery(['PROTOCOL_TOKEN_CONTRACT_ADDRESS']))).methods.allowance(profile.USER_ADDRESS, await retrieveQuery(["DEPOSITORY_CONTRACT_ADDRESS"])).call() > 0){
+                profile.IS_ZONE_APPROVED = true
+            }else{profile.IS_ZONE_APPROVED = false}
+            if(await (new KCC.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), await retrieveQuery(['STAKED_TOKEN_CONTRACT_ADDRESS']))).methods.allowance(profile.USER_ADDRESS, await retrieveQuery(["DEPOSITORY_CONTRACT_ADDRESS"])).call() > 0){
+                profile.IS_TWILIGHT_APPROVED = true
+            }else{profile.IS_TWILIGHT_APPROVED = false}
+            profile.ZONE_APPROVAL_AMOUNT_CONTRACT = (new KCC.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), await retrieveQuery(['PROTOCOL_TOKEN_CONTRACT_ADDRESS']))).methods.allowance(profile.USER_ADDRESS, await retrieveQuery(["DEPOSITORY_CONTRACT_ADDRESS"])).call();
+            profile.ZONE_APPROVAL_AMOUNT_DECIMAL = ((await retrieveQuery(["PROTOCOL_DECIMALS"])) ** profile.ZONE_APPROVAL_AMOUNT_CONTRACT);
+            profile.TWILIGHT_APPROVAL_AMOUNT_CONTRACT = (new KCC.eth.Contract(await retrieveABI('PROTOCOL_TOKEN_CONTRACT'), await retrieveQuery(['STAKEDPROTOCOL_TOKEN_CONTRACT_ADDRESS']))).methods.allowance(profile.USER_ADDRESS, await retrieveQuery(["DEPOSITORY_CONTRACT_ADDRESS"])).call();
+            profile.TWILIGHT_APPROVAL_AMOUNT_DECIMAL = ((await retrieveQuery(["STAKED_DECIMALS"])) ** profile.TWILIGHT_APPROVAL_AMOUNT_CONTRACT);
 
+            profile.DEPOSITORY_ADDRESS = await retrieveQuery(['DEPOSITORY_CONTRACT_ADDRESS']);
+            profile.DEPOSITORY_ABI = await retrieveABI('DEPOSITORY_CONTRACT');
+            profile.DEPOSITORY_ADDRESS = await retrieveQuery(['DIRSTRIBUTOR_CONTRACT_ADDRESS']);
+            profile.DEPOSITORY_ABI = await retrieveABI('DIRSTRIBUTOR_CONTRACT');
+            profile.PROTOCOL_ABI = await retrieveABI('PROTOCOL_CONTRACT');
+            profile.PROTOCOL_ADDRESS =  await retrieveABI('PROTOCOL_CONTRACT');
+
+            profile.BOND_LIST = (await (new Web3.eth.Contract(profile.DIRSTRIBUTOR_ABI, profile.DIRSTRIBUTOR_ADDRESS)).methods.listUserBonds(profile.USER_ADDRESS).call());
+
+        return profile;
     }
 
 }
 
 
+async function retrieveABI(query){
 
-async function retrieveABI(_query) {
-
-    switch (_query) {
+    switch (query) {
 
         case "PROTOCOL_TOKEN_CONTRACT":
             return JSON.parse(fs.readFileSync('./contractABI/ProtocolToken.json'));
@@ -129,29 +173,106 @@ async function retrieveABI(_query) {
 
 }
 
-
-//Structs
-/*
-
-let Bond = {
-    name,                   // - string - Bond Name
-    tokenAddress,           // - address - Accepted Token To Deposit For Bond
-    isAuthorized,           // - bool - Toggles Activation
-    isLiquidityToken,       // - bool - Single Asset, or LP?
-    isProtocolLiquidity,    // - bool - Is One Half Of The mainLiquidityPair The Protocol Token? 
-    mainLiquidityPair,      // - address - Has To Be Paired with Protocol Token or Price Token, [Duplicate Address if LP Token]
-    multiplier,             // - uint - Out of 1000, 500 = 50%, 250 = 25%
-    vestingTermInBlocks,    // - uint - How Many Blocks Untill Fully Vested
-    imageURL                // - string - Used For WebSite Generation [Bond Image]
+class userBond{
+    constructor(BOND_NAME,
+    BOND_TOKEN_ADDRESS,
+    ZONE_VALUE_DEPOSITED_DECIMAL,
+    CLAIMABLE_ZONE_AMOUNT_DECIMAL,
+    TOTAL_ZONE_REDEMPTION_DECIMAL){
+        this.BOND_NAME = BOND_NAME;
+        this.BOND_TOKEN_ADDRESS = BOND_TOKEN_ADDRESS;
+        this.ZONE_VALUE_DEPOSITED_DECIMAL = ZONE_VALUE_DEPOSITED_DECIMAL;
+        this.CLAIMABLE_ZONE_AMOUNT_DECIMAL = CLAIMABLE_ZONE_AMOUNT_DECIMAL;
+        this.TOTAL_ZONE_REDEMPTION_DECIMAL = TOTAL_ZONE_REDEMPTION_DECIMAL;
+    }
 }
 
-let UserBondTerms = {
-    name,                   // - string - Bond Name
-    totalProtocolAmount,    // - uint - Total Amount Of Protocol Tokens Owed
-    initialBondBlock,       // - uint - Intitially Bonded On What Block?
-    finalBondBlock,         // - uint - Final Complete Vesting Block
-    claimedAmount,          // - uint - How Much Protocol Tokens Have Been Claimed So Far
-    totalProtocolProfit,    // - uint - Total Actual Protocol Token Profits
-}
 
-*/
+class userProfile {
+    
+    constructor(){
+    this.USER_ADDRESS;// = USER_ADDRESS;
+    this.ZONE_BALANCE_DECIMAL; // = ZONE_BALANCE_DECIMAL;
+    this.ZONE_BALANCE_CONTRACT; // = ZONE_BALANCE_CONTRACT;
+    this.TWILIGHT_BALANCE_DECIMAL; // = TWILIGHT_BALANCE_DECIMAL;
+    this.TWILIGHT_BALANCE_CONTRACT; // = TWILIGHT_BALANCE_CONTRACT;
+    this.IS_ZONE_APPROVED; // = IS_ZONE_APPROVED;
+    this.ZONE_APPROVAL_AMOUNT_DECIMAL; // = ZONE_APPROVAL_AMOUNT_DECIMAL;
+    this.ZONE_APPROVAL_AMOUNT_CONTRACT; // = ZONE_APPROVAL_AMOUNT_CONTRACT;
+    this.IS_TWILIGHT_APPROVED; // = IS_TWILIGHT_APPROVED;
+    this.TWILIGHT_APPROVAL_AMOUNT_DECIMAL; // = TWILIGHT_APPROVAL_AMOUNT_DECIMAL;
+    this.TWILIGHT_APPROVAL_AMOUNT_CONTRACT; // = TWILIGHT_APPROVAL_AMOUNT_CONTRACT;
+    this.BOND_LIST; //= BOND_LIST; //Filled WIth an array of (BondNames => userBond)
+    
+    this.DEPOSITORY_ADDRESS; // = DEPOSITORY_ADDRESS;
+    this.DEPOSITORY_ABI; // = DEPOSITORY_ABI;
+    this.DIRSTRIBUTOR_ABI; // = DIRSTRIBUTOR_ABI;
+    this.DIRSTRIBUTOR_ADDRESS; // = DIRSTRIBUTOR_ADDRESS;
+    this.PROTOCOL_ABI; // = PROTOCOL_ABI;
+    this.PROTOCOL_ADDRESS; // = PROTOCOL_ADDRESS;
+    }
+    
+    async stake(_tokenAmountInDecimal){
+        
+        let sendAmount = ((_tokenAmountInDecial * ZONE_BALANCE_CONTRACT) / ZONE_BALANCE_DECIMAL);
+        
+        if(ZONE_APPROVAL_AMOUNT_CONTRACT >= sendAmount){
+            let contract = new Web3.eth.Contract(this.DEPOSITORY_ABI, this.DEPOSITORY_ADDRESS);
+            return (await contract.methods.stakeProtocol(sendAmount).send); //.then(function (result) {return result;});
+        }
+        
+        return false; //Error Handling Here
+    }
+    
+    async unStake(_tokenAmountInDecimal){
+        
+        let sendAmount = ((_tokenAmountInDecial * TWILIGHT_BALANCE_CONTRACT) / TWILIGHT_BALANCE_DECIMAL);
+        
+        if(ZONE_APPROVAL_AMOUNT_CONTRACT >= sendAmount){
+            let contract = new Web3.eth.Contract(this.DEPOSITORY_ABI, this.DEPOSITORY_ADDRESS);
+            return (await contract.methods.unstakeProtocol(sendAmount).send); //.then(function (result) {return result;});
+        }
+        
+        return false; //Error Handling Here
+    }
+    
+    
+    //Needs to First Check Before Call That Token Allowance is >= _tokenAmount with => ((await retrieveQuery(["USER_DEPOSITORY_TOKEN_ALLOWANCE", USER_ADDRESS, "Token Address"])) / (await retrieveQuery(["TOKEN_DECIMALS", "Token Address"])))
+    //Needs to conver to Contract format for _tokenAount, (tokenAmount *(await retrieveQuery(["TOKEN_DECIMALS", "Token Address"]))
+    async bond(_bondName, _tokenAmountInContract){
+        
+        let contract = new Web3.eth.Contract(this.DEPOSITORY_ABI, this.DEPOSITORY_ADDRESS);
+        return (await contract.methods.depositForBond(_bondName, _tokenAmountInContract).send); //.then(function (result) {return result;});
+        
+    }
+    
+    async claimBond(_bondName){
+        
+        if(BOND_LIST[_bondName].CLAIMABLE_ZONE_AMOUNT_DECIMAL >= 0){
+            let contract = new Web3.eth.Contract(this.DEPOSITORY_ABI, this.DEPOSITORY_ADDRESS);
+            return (await contract.methods.claimBond(_bondName).send); //.then(function (result) {return result;});
+        }
+        
+        return false;  //ERROR HANDLING
+    }
+
+    async getUserBondDetails(_bondName){
+        let bondData;
+        for (let i = 0; i < this.BOND_LIST.length(); i++) {
+            if(bondDataList[i].name == _bondName){
+                bondData = bondDataList[i];
+            }
+        }
+        let userTerms = new userBond;
+       
+        userTerms.BOND_NAME = _bondName;
+        userTerms.BOND_TOKEN_ADDRESS = (await (new KCC.eth.Contract(this.DIRSTRIBUTOR_ABI, this.DIRSTRIBUTOR_ADDRESS)).methods.getBondByName(_bondName).call()).tokenAddress;
+        
+        let claimAmount = (await (new KCC.eth.Contract(this.DIRSTRIBUTOR_ABI, this.DIRSTRIBUTOR_ADDRESS)).methods.getBondByName(_bondName).call());
+        userTerms.ZONE_VALUE_DEPOSITED_DECIMAL = (bondData.totalProtocolAmount - bondData.totalProtocolProfit) / (await (new KCC.eth.Contract(this.PROTOCOL_ABI, this.PROTOCOL_ADDRESS)).methods.decimals().call());
+        userTerms.CLAIMABLE_ZONE_AMOUNT_DECIMAL = (await (new KCC.eth.Contract(this.DIRSTRIBUTOR_ABI, this.DIRSTRIBUTOR_ADDRESS)).methods.claimAmountForBond(_bondName, this.USER_ADDRESS).call()) / (await (new KCC.eth.Contract(this.PROTOCOL_ABI, this.PROTOCOL_ADDRESS)).methods.decimals().call());
+        userTerms.TOTAL_ZONE_REDEMPTION_DECIMAL = (bondData.totalProtocolAmount - bondData.totalClaimedAmount) / (await (new KCC.eth.Contract(this.PROTOCOL_ABI, this.PROTOCOL_ADDRESS)).methods.decimals().call());
+        return userTerms;
+    }
+    
+}
