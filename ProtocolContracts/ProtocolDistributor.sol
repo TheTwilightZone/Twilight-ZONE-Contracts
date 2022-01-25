@@ -2,55 +2,11 @@ pragma solidity ^ 0.8.0;
 import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/DependencyContracts/FullMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
 
-
-//ERC20 Interface
-interface IERC20 {
-    function totalSupply() external view returns(uint256);
-    function balanceOf(address account) external view returns(uint256);
-    function transfer(address recipient, uint256 amount) external returns(bool);
-    function allowance(address owner, address spender) external view returns(uint256);
-    function approve(address spender, uint256 amount) external returns(bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns(bool);
-    function decimals() external view returns (uint8);
-}
-
-//Liquidity Token Interface
-interface IUniswapV2Pair {
-    function getReserves() external view returns(uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function token0() external view returns(address);
-    function token1() external view returns(address);
-}
-
-//Protocol Token Interface
-interface IProtocolERC20 {
-    function mint(address to, uint256 _amount) external returns(bool);
-    function burn(address account_, uint256 amount_) external returns(bool);
-    function protocolToReserve(uint256 _amount) external view returns(uint);
-    function reserveToProtocol(uint256 _amount) external view returns(uint);
-    function addToReservoir(uint _amount) external returns(bool);
-    function protocolReservoir() external view returns(uint);
-    function owner() external view returns (address);
-    function transferOwnership(address newOwner) external;
-}
-
-//Bleh - Disgusting
-interface IOhmERC20 {
-    function burnFrom(address account_, uint256 amount_) external;
-    function mint(address account_, uint256 amount_) external;
-    function allowance(address owner, address spender) external view returns (uint256);
-    function owner() external view returns (address);
-     function transferOwnership( address newOwner_ ) external;
-}
-
-//Calculator Interface
-interface IProtocolCalculatorOracle {
-    function bondValueInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns ( uint );
-    function bondProfitInProtocolAmount(address _tokenAddress, uint _tokenAmount) external view returns (uint);
-    function stakedProtocolToken() external view returns (address);
-    function protocolToken() external view returns (address);
-    function calculateProtocolStakingReward(uint _protocolAmount) external view returns (uint);
-
-}
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IERC20.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IUniswapV2Pair.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IProtocolERC20.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IOhmERC20.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IProtocolCalculatorOracle.sol";
 
 
 contract ProtocolDistributor{
@@ -290,7 +246,7 @@ contract ProtocolDistributor{
         uint currentDelta = currentBlock().sub(bondTerms.initialBondBlock);
         
         if(bondTerms.finalBondBlock <= currentBlock()){
-            return (bondTerms.totalProtocolAmount.sub(bondTerms.claimedAmount))
+            return (bondTerms.totalProtocolAmount.sub(bondTerms.claimedAmount));
         }else{
             return (FullMath.mulDiv(currentDelta, bondTerms.totalProtocolAmount, protocolDelta).sub(bondTerms.claimedAmount));
         }
@@ -312,12 +268,13 @@ contract ProtocolDistributor{
         IOhmERC20( protocolToken ).mint(_user, _tokenAmount); 
         return true;
     }
-    function burnProtocol(uint _tokenAmount, address _user) public isLender returns (bool success){
+    function burnProtocol(uint _tokenAmount) public isLender returns (bool success){
         address protocolToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).protocolToken();
         require(address(this) == IOhmERC20( protocolToken ).owner(), "E");
         require(IOhmERC20( protocolToken ).allowance(protocolLender, address(this)) >= _tokenAmount, "G");
-        require(IProtocolERC20( stakedToken ).burn(protocolLender, _tokenAmount), "H");
+        IOhmERC20( protocolToken ).burnFrom(protocolLender, _tokenAmount);
         blockUpdate(); 
+        return true;
     }
 
     //Stakes Coin By Burn MintWrapping
