@@ -47,7 +47,8 @@ contract ProtocolDistributor{
         address tokenAddress;        //Accepted Token To Deposit For Bond
         bool isAuthorized;           //Toggles Activation
         bool isLiquidityToken;       //Single Asset, or LP?
-        bool isProtocolLiquidity;    //Is One Half Of The mainLiquidityPair The Protocol Token? 
+        bool isProtocolLiquidity;    //Is One Half Of The mainLiquidityPair The Protocol Token?
+        bool isStakedLiquidity;      //Is One Half Of The mainLiquidityPair The Staked Protocol Token?
         address mainLiquidityPair;   //Has To Be Paired with Protocol Token or Price Token, [Duplicate Address if LP Token]
         uint multiplier;             //Out of 1000, 500 = 50%, 250 = 25%
         uint vestingTermInBlocks;    //How Many Blocks Untill Fully Vested
@@ -146,7 +147,7 @@ contract ProtocolDistributor{
     }
 
     //Add a New Bond
-    function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, uint _maxDepositCap, string calldata _imageURL) public isManager returns (bool success){
+    function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, bool _isStakedLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, uint _maxDepositCap, string calldata _imageURL) public isManager returns (bool success){
         
         //Checks Duplicates
         if(bondList.length > 0){
@@ -160,6 +161,7 @@ contract ProtocolDistributor{
             isAuthorized: false,                        //Toggle It Later Baby
             isLiquidityToken: _isLiquidityToken,        //Is this an LP
             isProtocolLiquidity: _isProtocolLiquidity,  //Is it paired with Protocol Token
+            isStakedLiquidity: _isStakedLiquidity,
             mainLiquidityPair: _mainLiquidityPair,      //LP Pair for the Token, if isLiquidity then Duplicate
             multiplier: _multiplier,                    //Out of 1000, 500 = %50 increase, 250 = %25 increase
             vestingTermInBlocks: _vestingTermInBlocks,  //Bond Finialization Time
