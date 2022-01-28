@@ -1,58 +1,15 @@
 pragma solidity ^ 0.8.0;
 import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/DependencyContracts/FullMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
-
-
-interface IERC20 {
-    function totalSupply() external view returns(uint256);
-    function balanceOf(address account) external view returns(uint256);
-    function transfer(address recipient, uint256 amount) external returns(bool);
-    function allowance(address owner, address spender) external view returns(uint256);
-    function approve(address spender, uint256 amount) external returns(bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns(bool);
-    function decimals() external view returns (uint8);
-}
-
-interface IUniswapV2Pair {
-    function getReserves() external view returns(uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function token0() external view returns(address);
-    function token1() external view returns(address);
-}
-
-interface IProtocolDistributor {
-    function whichBond(address) external view returns (uint);
-    function stakingReward() external view returns (StakingReward memory);
-    function getBondName(uint _index) external view returns (string memory bondName);
-    function getBondByName(string calldata _bondName) external view returns (Bond memory bond);
-    function getBondByID(uint _index) external view returns (Bond memory bond);
-    function listBonds() external view returns (Bond[] memory bonds);
-    function currentBlock() external view returns (uint blocks);
-}
-
-//Individual Bonds
-struct Bond{
-    string name;
-    address tokenAddress;
-    bool isAuthorized;
-    bool isLiquidityToken;
-    bool isProtocolLiquidity;
-    address mainLiquidityPair; //Paired with Protocol Token, or Price Token [Duplicate if LP Token]
-
-    uint multiplier; //Out 1000
-    uint vestingTermInBlocks;
-    string imageURL;
-}
-
-struct StakingReward{
-    uint protocolRewardAmount;
-    uint everyBlockAmount;
-}
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IProtocolDistributor.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IProtocolERC20.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IERC20.sol";
+import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IUniswapV2Pair.sol";
 
 
 contract ProtocolCalculatorOracle{
 
     using SafeMath for uint;
-
 
     address public manager;
     address public ProtocolDistributor;
@@ -122,13 +79,21 @@ contract ProtocolCalculatorOracle{
         if( isLP == true){
             
             bool isProtocolLP = IProtocolDistributor( ProtocolDistributor ).getBondByID(bondID).isProtocolLiquidity;
+            bool isStakedLP = IProtocolDistributor( ProtocolDistributor ).getBondByID(bondID).isStakedLiquidity;
+    
 
             if(isProtocolLP == true){
                 uint inLiquidity = IERC20( protocolToken ).balanceOf(_tokenAddress);
                 uint totalLiqudity = IERC20(_tokenAddress).totalSupply();
                 uint totalProtocolAmount = FullMath.mulDiv(_tokenAmount, inLiquidity, totalLiqudity);
                 return totalProtocolAmount.mul(2);
-            } else {
+            }else if(isStakedLP == true){
+                uint inLiquidity = IERC20( stakedProtocolToken ).balanceOf(_tokenAddress);
+                uint totalLiqudity = IERC20(_tokenAddress).totalSupply();
+                uint totalStakedAmount = FullMath.mulDiv(_tokenAmount, inLiquidity, totalLiqudity);
+                uint totalProtocolAmount = IProtocolERC20( stakedProtocolToken ).reserveToProtocol(totalStakedAmount);
+                return totalProtocolAmount.mul(2);
+            }else {
                 uint inLiquidity = IERC20( priceToken ).balanceOf(_tokenAddress);
                 uint totalLiqudity = IERC20(_tokenAddress).totalSupply();
                 uint totalPriceAmount = FullMath.mulDiv(_tokenAmount, inLiquidity, totalLiqudity);
