@@ -147,7 +147,7 @@ contract ProtocolDistributor{
     }
 
     //Add a New Bond
-    function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, bool _isStakedLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, uint _maxDepositCap, string calldata _imageURL) public isManager returns (bool success){
+    function addBond(string calldata _name, address _tokenAddress, bool  _isLiquidityToken, bool  _isProtocolLiquidity, bool _isStakedLiquidity, address _mainLiquidityPair, uint _multiplier, uint _vestingTermInBlocks, string calldata _imageURL) public isManager returns (bool success){
         
         //Checks Duplicates
         if(bondList.length > 0){
@@ -165,7 +165,7 @@ contract ProtocolDistributor{
             mainLiquidityPair: _mainLiquidityPair,      //LP Pair for the Token, if isLiquidity then Duplicate
             multiplier: _multiplier,                    //Out of 1000, 500 = %50 increase, 250 = %25 increase
             vestingTermInBlocks: _vestingTermInBlocks,  //Bond Finialization Time
-            maxDepositCap: _maxDepositCap,              //How Much Protocol Can Be Deposited
+            maxDepositCap: 0,              //How Much Protocol Can Be Deposited
             totalDeposited: 0,                          //Metric For Protocol Deposited
             imageURL: _imageURL                         //For Website Generation
         });
