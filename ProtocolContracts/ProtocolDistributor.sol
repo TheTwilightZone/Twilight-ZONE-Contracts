@@ -151,7 +151,9 @@ contract ProtocolDistributor{
         
         //Checks Duplicates
         if(bondList.length > 0){
-            require(bondList[bondArchive[_name]].isAuthorized != true, "B");
+            if(bondList[bondArchive[_name]].isAuthorized == true){
+                require(_compareStrings(bondList[bondArchive[_name]].name, _name) == false, "B");
+            }
         }
 
         //Create New Bond
