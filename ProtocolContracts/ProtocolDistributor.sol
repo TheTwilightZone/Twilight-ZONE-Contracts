@@ -306,7 +306,7 @@ contract ProtocolDistributor{
 
         //Get Bond Value In Protocol Amount
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
-        require(theBond.maxDepositCap >= (theBond.maxDepositCap.add(protocolValue)));
+        require(theBond.maxDepositCap >= (theBond.totalDeposited.add(protocolValue)));
         
         uint bondListNumber = userProfile[_user].userBondList.length;
 
