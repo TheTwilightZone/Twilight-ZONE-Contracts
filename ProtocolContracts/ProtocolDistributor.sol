@@ -358,6 +358,7 @@ contract ProtocolDistributor{
         require(claimAmountForBond(_bondName, _user) > 0, "K");
         require(userProfile[_user].isInitialized[_bondName], "L");
         uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
+        require(_mintProtocol(claimAmountForBond(_bondName, _user), _user)); 
         userProfile[_user].userBondList[userBondID].claimedAmount = userProfile[_user].userBondList[userBondID].claimedAmount.add(claimAmountForBond(_bondName, _user));
         if(userProfile[_user].userBondList[userBondID].finalBondBlock <= currentBlock()){
             userProfile[_user].userBondList[userBondID].totalProtocolAmount = 0;
