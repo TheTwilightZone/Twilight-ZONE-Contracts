@@ -308,6 +308,7 @@ contract ProtocolDistributor{
         uint protocolValue = IProtocolCalculatorOracle( protocolCalculatorOracle ).bondValueInProtocolAmount(_bondToken, _tokenAmount);
         require(theBond.maxDepositCap >= (theBond.totalDeposited.add(protocolValue)));
         
+        
         uint bondListNumber = userProfile[_user].userBondList.length;
 
         //Handles Empty User Data
@@ -345,7 +346,7 @@ contract ProtocolDistributor{
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit);    //Updates Total Profit Recieved From Bond
         userProfile[_user].userBondList[userBondID] = newTerms;                     //Merges Local With External
 
-        require(_setBondValue(bondName, 2, (theBond.maxDepositCap.add(protocolValue))));
+        require(_setBondValue(bondName, 3, (theBond.totalDeposited.add(protocolValue))));
 
         emit BondDeposited(_user, bondID, currentBlock(), _tokenAmount);            //Log That Shit
         blockUpdate();                                                              //Routine
@@ -459,6 +460,9 @@ contract ProtocolDistributor{
             return true;
         }else if (_ID == 2){
             bondList[bondArchive[_bondName]].maxDepositCap = _value;
+            return true;
+        }else if (_ID == 3){
+            bondList[bondArchive[_bondName]].totalDeposited = _value;
             return true;
         }
         return false;
