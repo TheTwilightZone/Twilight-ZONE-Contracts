@@ -276,23 +276,23 @@ contract ProtocolDistributor{
 
     //Stakes Coin By Burn MintWrapping
     function stake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
+        blockUpdate();
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
         uint mintAmount = IProtocolERC20( stakedToken ).protocolToReserve(_tokenAmount);                            //Determines Mint Amount
         require(_burnProtocol(_tokenAmount, assetDepository));                                                      //Burn The Fake Money
         require(_mintStaked(mintAmount, _user));                                                                    //Require Mint Tokens
-        emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit
-        blockUpdate();                                                                                              //Routine
+        emit ProtocolStaked(_user, _tokenAmount);                                                                   //Log That Shit                                                                                             //Routine
         return true;                                                                                                //Ship It
     }
 
     //Unstakes Coin By Burn MintWrapping
     function unStake(uint _tokenAmount, address _user) public isDepositor returns (bool success){
+        blockUpdate();
         address stakedToken = IProtocolCalculatorOracle( protocolCalculatorOracle ).stakedProtocolToken();          //Gets Staked Token
         uint mintAmount = IProtocolERC20( stakedToken ).reserveToProtocol(_tokenAmount);                            //Determines Mint Amount
         require(_burnStaked(_tokenAmount, assetDepository));
         require(_mintProtocol(mintAmount, _user)); 
         emit ProtocolUnStaked(_user, mintAmount);
-        blockUpdate();
         return true;
     }
 
