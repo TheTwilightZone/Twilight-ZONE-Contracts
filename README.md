@@ -22,7 +22,11 @@
 |:----------:|:------------------------------------------:|:-------------------:|
 | ZONE token | 0x32930590244e31a9e4bbda8ab743539af62f3c5a | Main token contract |
 | TWLT token | 0x905bB6419948455847bEF285485495fb570973b0 |Twilight token contract|
-|            |                                            |                     |
+| Distributor| 0x6238e47BF30F550bC61367a3E6c3d34aA36E249A | Protocol Distributor|
+| Calculator | 0x6A65812aace007866EDE6196Ab386633e8085FFc | Protocol Calculator |
+| Depository | 0x9439EB7659B5119AE251D8304a75996aA0AfD85b |  Asset Depository   |
+| WKCS / ZONE BOND| 0xab7942b858045fd75575c6c6831ba13f78e2afa8 | LP BOND Token  |
+
 
 ## Allocator Guide
 The following is a guide for interacting with the treasury as a reserve allocator.
