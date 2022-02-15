@@ -9,6 +9,12 @@ import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/int
 import "https://github.com/TheTwilightZone/Twilight-ZONE-Contracts/blob/main/interfaces/IProtocolCalculatorOracle.sol";
 
 
+interface IMigrator {
+    function claimMigratedAmount(string calldata _bondName, address _user) external returns (bool);
+    function getMigratedAmount(string calldata _bondName, address _user) external view returns (uint);
+}
+
+
 contract ProtocolDistributor{
 
     //Construct This Baby
@@ -24,6 +30,7 @@ contract ProtocolDistributor{
     address public protocolCalculatorOracle;                 //Calculator Contract
     address public assetDepository;                          //Staking & Depositing OnRamp Contract
     address public protocolLender;                           //Allows Minting Based For Loans
+    address public migrator;
     EpochInfo public epochInfo;                              //Chain Epoch Information
     StakingReward public stakingReward;                      //Staking Reward Info
     mapping(string => uint) private bondArchive;             //Bond String To Bond Index
@@ -124,6 +131,8 @@ contract ProtocolDistributor{
             return true;
         }else if(_ID == 2){
             protocolLender = _contractAddress;
+        }else if(_ID == 3){
+            migrator = _contractAddress;
         }
         return false;
     }
@@ -336,14 +345,17 @@ contract ProtocolDistributor{
 
         //Adds Profit To Local BondTerms
         newTerms.totalProtocolAmount = newTerms.totalProtocolAmount.add(protocolValue.add(profit));
+
+        //Remove ClaimedAmount
+        newTerms.totalProtocolAmount = newTerms.totalProtocolAmount.sub(newTerms.claimedAmount);
+        newTerms.claimedAmount = 0;
         
-        //Changes Initial Block Only if 0
-        if (newTerms.initialBondBlock <= 0){
-            newTerms.initialBondBlock = currentBlock();
-        }
+        //Changes Initial Block
+        newTerms.initialBondBlock = currentBlock();
 
         newTerms.finalBondBlock = currentBlock().add(theBond.vestingTermInBlocks);  //Sets Final Bond Block
         newTerms.totalProtocolProfit = newTerms.totalProtocolProfit.add(profit);    //Updates Total Profit Recieved From Bond
+
         userProfile[_user].userBondList[userBondID] = newTerms;                     //Merges Local With External
 
         require(_setBondValue(bondName, 3, (theBond.totalDeposited.add(protocolValue))));
@@ -355,10 +367,26 @@ contract ProtocolDistributor{
 
     //Adjusts Information to Claim Bonds
     function claimBond(string calldata _bondName, address _user) public isDepositor returns (bool success){
-        require(claimAmountForBond(_bondName, _user) > 0, "K");
-        require(userProfile[_user].isInitialized[_bondName], "L");
-        uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID
-        require(_mintProtocol(claimAmountForBond(_bondName, _user), _user)); 
+        
+        uint mintAmount = 0;
+        if( IMigrator( migrator ).getMigratedAmount(_bondName, _user) > 0){
+            mintAmount = IMigrator( migrator ).getMigratedAmount(_bondName, _user);
+            require(IMigrator( migrator ).claimMigratedAmount(_bondName, _user) == true);
+
+            if(claimAmountForBond(_bondName, _user) > 0){
+                require(userProfile[_user].isInitialized[_bondName], "L");
+                mintAmount = mintAmount.add(claimAmountForBond(_bondName, _user));
+            }
+
+        } else{
+            require(claimAmountForBond(_bondName, _user) > 0, "K");
+            require(userProfile[_user].isInitialized[_bondName], "L");
+            mintAmount = claimAmountForBond(_bondName, _user);
+        }
+
+        require(_mintProtocol(mintAmount, _user));
+        
+        uint userBondID = userProfile[_user].userBondArchive[_bondName]; //Get Bond ID 
         userProfile[_user].userBondList[userBondID].claimedAmount = userProfile[_user].userBondList[userBondID].claimedAmount.add(claimAmountForBond(_bondName, _user));
         if(userProfile[_user].userBondList[userBondID].finalBondBlock <= currentBlock()){
             userProfile[_user].userBondList[userBondID].totalProtocolAmount = 0;
