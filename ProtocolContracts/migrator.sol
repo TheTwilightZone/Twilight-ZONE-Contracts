@@ -17,6 +17,11 @@ contract migrator{
         mapping(string => uint) claimedAmount;
     }
 
+    constructor(address _distributor) {
+        contractToMigrate = _distributor;
+    }
+
+
     function getMigratedAmount(string calldata _bondName, address _user) public view returns (uint){
 
         uint pendingBalance = IProtocolDistributor( contractToMigrate ).claimAmountForBond(_bondName, _user);
