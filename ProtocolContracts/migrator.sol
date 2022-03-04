@@ -34,9 +34,14 @@ contract migrator{
 
     }
 
-    function claimMigratedAmount(string calldata _bondName, address _user) public returns (bool){
+    function claimMigratedAmount(string calldata _bondName, address _user) public isManager returns (bool){
         userAccount[_user].claimedAmount[_bondName] = IProtocolDistributor( contractToMigrate ).claimAmountForBond(_bondName, _user);
         return true;
+    }
+
+    modifier isManager() {
+        require(msg.sender == contractToMigrate);
+        _;
     }
 
 }
